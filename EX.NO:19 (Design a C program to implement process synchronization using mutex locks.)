@@ -1,0 +1,63 @@
+/* file: mutex_threads.c
+   Compile: gcc -pthread -O2 -o mutex_threads mutex_threads.c
+   Run: ./mutex_threads
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+
+#define NUM_THREADS 5
+#define INCREMENTS_PER_THREAD 100000
+
+long long counter = 0;
+pthread_mutex_t lock;
+
+void *worker(void *arg) {
+    int id = (int)(long)arg;
+    for (int i = 0; i < INCREMENTS_PER_THREAD; ++i) {
+        /* Enter critical section */
+        if (pthread_mutex_lock(&lock) != 0) {
+            perror("pthread_mutex_lock");
+            exit(EXIT_FAILURE);
+        }
+
+        counter++;  /* critical update */
+
+        if (pthread_mutex_unlock(&lock) != 0) {
+            perror("pthread_mutex_unlock");
+            exit(EXIT_FAILURE);
+        }
+        /* End critical section */
+    }
+    printf("Thread %d finished\n", id);
+    return NULL;
+}
+
+int main(void) {
+    pthread_t threads[NUM_THREADS];
+
+    if (pthread_mutex_init(&lock, NULL) != 0) {
+        perror("pthread_mutex_init");
+        return EXIT_FAILURE;
+    }
+
+    for (long i = 0; i < NUM_THREADS; ++i) {
+        if (pthread_create(&threads[i], NULL, worker, (void *)i) != 0) {
+            perror("pthread_create");
+            return EXIT_FAILURE;
+        }
+    }
+
+    for (int i = 0; i < NUM_THREADS; ++i) {
+        pthread_join(threads[i], NULL);
+    }
+
+    if (pthread_mutex_destroy(&lock) != 0) {
+        perror("pthread_mutex_destroy");
+        return EXIT_FAILURE;
+    }
+
+    printf("Final counter value: %lld (expected %d)\n", counter, NUM_THREADS * INCREMENTS_PER_THREAD);
+    return 0;
+}
