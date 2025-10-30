@@ -1,0 +1,62 @@
+#include <stdio.h>
+
+struct Process {
+    int pid;        // Process ID
+    int bt;         // Burst Time
+    int art;        // Arrival Time
+    int prio;       // Priority
+};
+
+int main() {
+    int n, complete = 0, t = 0, min_prio, shortest;
+    float total_wait = 0, total_tat = 0;
+
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
+
+    struct Process p[n];
+    int rt[n]; // Remaining Time
+
+    for (int i = 0; i < n; i++) {
+        printf("Enter Arrival Time, Burst Time and Priority for P%d: ", i + 1);
+        p[i].pid = i + 1;
+        scanf("%d%d%d", &p[i].art, &p[i].bt, &p[i].prio);
+        rt[i] = p[i].bt;
+    }
+
+    printf("\nGantt Chart:\n");
+    while (complete != n) {
+        min_prio = 9999;
+        shortest = -1;
+
+        for (int i = 0; i < n; i++) {
+            if (p[i].art <= t && rt[i] > 0 && p[i].prio < min_prio) {
+                min_prio = p[i].prio;
+                shortest = i;
+            }
+        }
+
+        if (shortest == -1) { // No process ready
+            t++;
+            continue;
+        }
+
+        printf("P%d ", p[shortest].pid);
+        rt[shortest]--;
+        t++;
+
+        if (rt[shortest] == 0) {
+            complete++;
+            int finish_time = t;
+            int tat = finish_time - p[shortest].art;
+            int wt = tat - p[shortest].bt;
+            total_tat += tat;
+            total_wait += wt;
+        }
+    }
+
+    printf("\n\nAverage Waiting Time = %.2f", total_wait / n);
+    printf("\nAverage Turnaround Time = %.2f\n", total_tat / n);
+
+    return 0;
+}
